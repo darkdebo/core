@@ -403,10 +403,30 @@ class SettingsManager implements ISettingsManager {
 		if (empty($panels)) {
 			return [];
 		}
+
+		$userLoggedIn = $this->userSession->getUser();
+		$isGuestUser = false;
+		$allApps = [];
+		if ($userLoggedIn !== null) {
+			$userAppAttributes = $userLoggedIn->getExtendedAttributes();
+			if (\array_key_exists('guests', $userAppAttributes)) {
+				$isGuestUser = true;
+				$allApps = $this->appManager->getAllApps();
+			}
+		} else {
+			$userAppAttributes = null;
+		}
+		$allApps = $this->appManager->getAllApps();
 		foreach ($panels as $panelClassName) {
 			// Attempt to load the panel
 			try {
 				$panel = $this->loadPanel($panelClassName);
+				if ($userAppAttributes !== null) {
+					if ($isGuestUser  && \in_array($panel->getSectionID(), $allApps)
+						&& !\in_array($panel->getSectionID(), $userAppAttributes['guests']['whiteListedApps'])) {
+						continue;
+					}
+				}
 				$section = $this->loadSection($type, $panel->getSectionID());
 				$this->panels[$type][$section->getID()][] = $panel;
 				$this->sections[$type][$section->getID()] = $section;

@@ -555,4 +555,21 @@ class User implements IUser {
 	public function getAccountId() {
 		return $this->account->getId();
 	}
+
+	/**
+	 * get the attributes of user for apps
+	 *
+	 * @return array
+	 * @since 10.3.1
+	 */
+	public function getExtendedAttributes() {
+		if ($this->eventDispatcher === null) {
+			$this->eventDispatcher = \OC::$server->getEventDispatcher();
+		}
+
+		$event = new GenericEvent('appAttributesForUser', []);
+		$this->eventDispatcher->dispatch('getAppAttributesForUser', $event);
+
+		return $event->getArguments();
+	}
 }
